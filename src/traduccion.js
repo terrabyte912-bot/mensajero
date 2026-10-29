@@ -2,7 +2,7 @@
 import { E, guardar } from './estado.js';
 import { ARNM, codones, traducir, anticodon, NOMBRE, TODOS_CODONES } from './data.js';
 import { mezclar } from './retos.js';
-import { ANCHO, estilo, boton, ficha, crearReto, VERDE, ROJO } from './ui.js';
+import { ANCHO, estilo, boton, ficha, fondo, crearReto, VERDE, ROJO } from './ui.js';
 
 const PASO = 128, SITIO_A = 760, SITIO_P = SITIO_A - PASO, Y_ARNM = 430;
 
@@ -16,13 +16,17 @@ export class Traduccion extends Phaser.Scene {
     this.cods = codones(ARNM);
     this.i = d.desde;
     this.cadena = this.cods.slice(0, d.desde).map(traducir);
-    this.cameras.main.setBackgroundColor(d.desde ? 0xfdf0e4 : 0xe4f5ef).fadeIn(200);
+    this.cameras.main.fadeIn(200);
+    fondo(this, d.desde ? 0xfff6ee : 0xf0faf6, d.desde ? 0xf7dcc6 : 0xcdeee2);
 
-    const g = this.add.graphics();
-    g.fillStyle(0xa1887f, 1).fillEllipse(SITIO_A - PASO / 2, 340, 470, 170);
-    g.fillStyle(0xd7ccc8, 1).fillEllipse(SITIO_A - PASO / 2, 512, 400, 100);
-    for (const [x, l] of [[SITIO_P, 'P'], [SITIO_A, 'A']]) this.add.text(x, 378, `sitio ${l}`, estilo(18, '#fff', { fontStyle: 'bold' })).setOrigin(0.5);
-    this.add.text(SITIO_A - PASO / 2, 300, 'RIBOSOMA', estilo(22, '#fff', { fontStyle: 'bold' })).setOrigin(0.5);
+    // Ribosoma: subunidad grande (con cara) arriba y chica abajo; el ARNm pasa entre las dos.
+    const g = this.add.graphics(), cx = SITIO_A - PASO / 2;
+    g.fillStyle(0x000000, 0.08).fillEllipse(cx, 572, 420, 40);
+    g.fillStyle(0x8d6e63, 1).fillEllipse(cx, 350, 470, 170).fillStyle(0xa1887f, 1).fillEllipse(cx, 340, 470, 160);
+    g.fillStyle(0xc4b5ae, 1).fillEllipse(cx, 518, 400, 100).fillStyle(0xd7ccc8, 1).fillEllipse(cx, 512, 400, 92);
+    for (const ox of [-40, 40]) g.fillStyle(0xffffff, 1).fillCircle(cx + ox, 300, 15).fillStyle(0x23233a, 1).fillCircle(cx + ox + 3, 302, 7);
+    g.lineStyle(4, 0x23233a, 1).beginPath().arc(cx, 318, 16, 0.2 * Math.PI, 0.8 * Math.PI).strokePath();
+    for (const [x, l] of [[SITIO_P, 'P'], [SITIO_A, 'A']]) this.add.text(x, 384, `sitio ${l}`, estilo(18, '#fff', { fontStyle: '800' })).setOrigin(0.5);
 
     this.tira = this.add.container(0, 0);
     this.proteina = this.add.container(0, 0);

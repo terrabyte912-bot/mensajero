@@ -6,8 +6,13 @@ export const ANCHO = 1280, ALTO = 720;
 export const TINTA = '#23233a';
 export const VIOLETA = 0x6c5ce7, VERDE = 0x27ae60, ROJO = 0xeb5757, GRIS = 0x9aa0b4;
 
+export const FUENTE = 'Nunito, system-ui, "Segoe UI", Roboto, sans-serif';
 export const estilo = (tam = 22, color = TINTA, extra = {}) =>
-  ({ fontFamily: 'system-ui, "Segoe UI", Roboto, sans-serif', fontSize: tam + 'px', color, ...extra });
+  ({ fontFamily: FUENTE, fontSize: tam + 'px', color, fontStyle: '600', ...extra });
+
+// Fondo degradado de pantalla completa (fijo a la cámara).
+export const fondo = (scene, arriba, abajo) =>
+  scene.add.graphics().setScrollFactor(0).setDepth(-10).fillGradientStyle(arriba, arriba, abajo, abajo, 1).fillRect(0, 0, ANCHO, ALTO);
 
 // Fija a la pantalla un objeto y todo lo que tiene adentro: Phaser calcula los toques
 // de cada hijo con su propio scrollFactor, no con el del contenedor.
@@ -19,9 +24,11 @@ const cortar = (p, x, y, ev) => ev?.stopPropagation();
 export function boton(scene, x, y, w, h, etiqueta, alTocar, color = VIOLETA, tam = 22) {
   const c = scene.add.container(x, y);
   const g = scene.add.graphics();
-  g.fillStyle(0x000000, 0.15).fillRoundedRect(-w / 2, -h / 2 + 4, w, h, 14);
-  g.fillStyle(color, 1).fillRoundedRect(-w / 2, -h / 2, w, h, 14);
-  const t = scene.add.text(0, 0, etiqueta, estilo(tam, '#fff', { fontStyle: 'bold', align: 'center', wordWrap: { width: w - 20 } })).setOrigin(0.5);
+  const r = Math.min(16, h / 2);
+  g.fillStyle(Phaser.Display.Color.ValueToColor(color).darken(18).color, 1).fillRoundedRect(-w / 2, -h / 2 + 5, w, h, r);
+  g.fillStyle(color, 1).fillRoundedRect(-w / 2, -h / 2, w, h, r);
+  g.fillStyle(0xffffff, 0.16).fillRoundedRect(-w / 2 + 4, -h / 2 + 3, w - 8, h * 0.42, { tl: r - 3, tr: r - 3, bl: 6, br: 6 });
+  const t = scene.add.text(0, 0, etiqueta, estilo(tam, '#fff', { fontStyle: '800', align: 'center', wordWrap: { width: w - 20 } })).setOrigin(0.5);
   c.add([g, t]).setSize(w, h).setInteractive({ useHandCursor: true });
   c.on('pointerdown', (...a) => { cortar(...a); alTocar(); });
   c.on('pointerover', () => c.setAlpha(0.85)).on('pointerout', () => c.setAlpha(1));
@@ -31,8 +38,9 @@ export function boton(scene, x, y, w, h, etiqueta, alTocar, color = VIOLETA, tam
 
 export function panel(scene, x, y, w, h, color = 0xffffff) {
   return scene.add.graphics()
-    .fillStyle(0x000000, 0.18).fillRoundedRect(x - w / 2, y - h / 2 + 6, w, h, 22)
-    .fillStyle(color, 1).fillRoundedRect(x - w / 2, y - h / 2, w, h, 22);
+    .fillStyle(0x2a1f66, 0.16).fillRoundedRect(x - w / 2, y - h / 2 + 7, w, h, 22)
+    .fillStyle(color, 1).fillRoundedRect(x - w / 2, y - h / 2, w, h, 22)
+    .lineStyle(3, 0xe4dcfb, 1).strokeRoundedRect(x - w / 2, y - h / 2, w, h, 22);
 }
 
 // Ficha de una base: cuadrado de color con la letra.
@@ -42,11 +50,13 @@ export function ficha(scene, x, y, base, tam = 56, borde = 0) {
   const pintar = (b, color) => {
     g.clear();
     if (borde) g.lineStyle(4, borde).strokeRoundedRect(-tam / 2, -tam / 2, tam, tam, 10);
-    if (b) g.fillStyle(color ?? COLOR_BASE[b], 1).fillRoundedRect(-tam / 2, -tam / 2, tam, tam, 10);
+    const col = color ?? COLOR_BASE[b];
+    if (b) g.fillStyle(Phaser.Display.Color.ValueToColor(col).darken(15).color, 1).fillRoundedRect(-tam / 2, -tam / 2 + tam * 0.07, tam, tam, 10)
+      .fillStyle(col, 1).fillRoundedRect(-tam / 2, -tam / 2, tam, tam, 10);
     else g.lineStyle(3, GRIS).strokeRoundedRect(-tam / 2, -tam / 2, tam, tam, 10);
     t.setText(b || '');
   };
-  const t = scene.add.text(0, 0, '', estilo(tam * 0.5, '#fff', { fontStyle: 'bold' })).setOrigin(0.5);
+  const t = scene.add.text(0, 0, '', estilo(tam * 0.52, '#fff', { fontStyle: '900' })).setOrigin(0.5);
   c.add([g, t]);
   pintar(base);
   c.pintar = pintar;

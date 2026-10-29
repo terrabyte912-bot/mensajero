@@ -106,9 +106,10 @@ export const ARTE = {
 export const ARNTS = { AUG: 'Met', ACC: 'Thr', AAC: 'Asn', AAG: 'Lys' };
 for (const [c, aa] of Object.entries(ARNTS)) ARTE[`arnt-${c}`] = arnt(c, aa);
 
-export function cargarArte(scene) {
-  for (const [clave, s] of Object.entries(ARTE)) {
-    const url = URL.createObjectURL(new Blob([s], { type: 'image/svg+xml' }));
-    scene.load.svg(clave, url);
-  }
-}
+// Crea las texturas con <img> y data URLs (sin pedidos de red), así funciona también con doble clic.
+export const cargarArte = scene => Promise.all(Object.entries(ARTE).map(([clave, s]) => new Promise((ok, mal) => {
+  const img = new Image();
+  img.onload = () => { scene.textures.addImage(clave, img); ok(); };
+  img.onerror = mal;
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+})));

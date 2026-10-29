@@ -2,8 +2,17 @@
 import { E, guardar, darPagina } from './estado.js';
 import { ZONAS } from './zonas.js';
 import { ANCHO, ALTO, estilo, boton, panel, crearReto, abrirCodonario, VERDE } from './ui.js';
+import { ARNTS } from './arte.js';
 
 const VELOCIDAD = 270, CERCA = 120;
+
+// Quién habla → su dibujo, para el retrato del diálogo.
+const RETRATOS = {
+  'ARN polimerasa': 'polimerasa', 'Enzima del casquete': 'casquete', 'Poli-A polimerasa': 'poliA', Histona: 'histona',
+  'Complejo del poro': 'guardian', ADN: 'adn', 'ARNm de la actina': 'arnm-2', Ribosoma: 'ribosoma', PRS: 'prs',
+  Virus: 'virus', Chaperona: 'chaperona', 'Peptidasa señal': 'peptidasa', Golgi: 'golgi',
+  ...Object.fromEntries(Object.entries(ARNTS).map(([c, aa]) => [`ARNt-${aa}`, `arnt-${c}`])),
+};
 
 export class Mundo extends Phaser.Scene {
   constructor() { super('Mundo'); }
@@ -32,20 +41,32 @@ export class Mundo extends Phaser.Scene {
       solidos.add(o);
     }
 
+    // Sombras: las de los que se mueven se actualizan en update().
+    this.sombras = [];
+    const sombra = (s, sigue) => {
+      const e = this.add.ellipse(s.x, s.y + s.displayHeight * 0.42, s.displayWidth * 0.7, 18, 0x000000, 0.12).setDepth(2);
+      if (sigue) this.sombras.push([s, e]);
+      return e;
+    };
+
     const [px, py] = E.pos ?? z.inicio;
     this.yo = this.physics.add.image(px, py, this.texturaYo()).setCollideWorldBounds(true).setDepth(10);
     this.yo.body.setSize(this.yo.width * 0.55, this.yo.height * 0.5);
     if (!E.flags.nacido) this.yo.setAlpha(0);
+    else sombra(this.yo, true);
     this.physics.add.collider(this.yo, solidos);
     this.cameras.main.startFollow(this.yo, true, 0.12, 0.12);
 
     this.npcs = (z.npcs ?? []).filter(n => !n.visible || n.visible()).map(n => {
       const s = this.add.image(n.x, n.y, n.img).setDepth(5);
+      sombra(s);
       this.physics.add.existing(s, true);
       s.body.setSize(s.width * 0.6, s.height * 0.5);
       this.physics.add.collider(this.yo, s);
       this.tweens.add({ targets: s, y: n.y - 6, duration: 900 + Math.random() * 400, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-      this.add.text(n.x, n.y - s.height / 2 - 16, n.nombre, estilo(17, '#4a4a68', { fontStyle: 'bold' })).setOrigin(0.5).setDepth(6);
+      const nombre = this.add.text(n.x, n.y - s.height / 2 - 18, n.nombre, estilo(16, '#4a4a68', { fontStyle: '800' })).setOrigin(0.5).setDepth(7);
+      this.add.graphics().setDepth(6).fillStyle(0xffffff, 0.8)
+        .fillRoundedRect(nombre.x - nombre.width / 2 - 10, nombre.y - nombre.height / 2 - 3, nombre.width + 20, nombre.height + 6, 12);
       s.datos = n;
       return s;
     });
@@ -56,6 +77,7 @@ export class Mundo extends Phaser.Scene {
       s.body.setSize(s.width * 0.6, s.height * 0.6);
       s.datos = en;
       if (en.jefe) { s.setScale(1.3); s.body.setImmovable(true); }
+      sombra(s, true);
       if (en.rango) {
         this.physics.add.collider(s, solidos);
         this.time.addEvent({
@@ -84,8 +106,12 @@ export class Mundo extends Phaser.Scene {
 
     this.salidas = z.salidas ?? [];
     for (const s of this.salidas) {
-      this.add.rectangle(s.x + s.w / 2, s.y + s.h / 2, s.w, s.h, 0xffffff, 0.35).setDepth(1);
-      if (s.etiqueta) this.add.text(s.x - 10, s.y + s.h / 2, s.etiqueta, estilo(22, '#4a4a68', { fontStyle: 'bold' })).setOrigin(1, 0.5).setDepth(2);
+      const brillo = this.add.rectangle(s.x + s.w / 2, s.y + s.h / 2, s.w, s.h, 0xffffff, 0.45).setDepth(1);
+      this.tweens.add({ targets: brillo, alpha: 0.15, duration: 900, yoyo: true, repeat: -1 });
+      if (s.etiqueta) {
+        const t = this.add.text(s.x - 10, s.y + s.h / 2, s.etiqueta, estilo(22, '#4a4a68', { fontStyle: '800' })).setOrigin(1, 0.5).setDepth(2);
+        this.tweens.add({ targets: t, x: s.x - 22, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      }
     }
     this.ultimo = [px, py];
 
@@ -163,6 +189,7 @@ export class Mundo extends Phaser.Scene {
     if (len > 1) { dx /= len; dy /= len; }
     this.yo.setVelocity(dx * VELOCIDAD, dy * VELOCIDAD);
     if (dx) this.yo.setFlipX(dx < 0);
+    for (const [s, e] of this.sombras) e.setPosition(s.x, s.y + s.displayHeight * 0.42);
 
     this.cerca = this.ocupado ? null : this.npcs.find(s => Phaser.Math.Distance.Between(s.x, s.y, this.yo.x, this.yo.y) < CERCA + s.width / 3);
     this.botonHablar.setVisible(!!this.cerca);
@@ -189,20 +216,27 @@ export class Mundo extends Phaser.Scene {
     this.yo.setVelocity(0, 0);
     const caja = this.add.container(0, 0).setScrollFactor(0).setDepth(2000);
     caja.add(panel(this, ANCHO / 2, ALTO - 105, 1220, 180));
-    const quien = this.add.text(55, ALTO - 182, '', estilo(22, '#6c5ce7', { fontStyle: 'bold' }));
-    const texto = this.add.text(55, ALTO - 150, '', estilo(24, '#23233a', { wordWrap: { width: 1150 }, lineSpacing: 6 }));
+    const fondoRetrato = this.add.circle(118, ALTO - 105, 66, 0xefe9fb);
+    const retrato = this.add.image(118, ALTO - 105, 'polimerasa');
+    const quien = this.add.text(0, ALTO - 182, '', estilo(22, '#6c5ce7', { fontStyle: '800' }));
+    const texto = this.add.text(0, ALTO - 150, '', estilo(25, '#23233a', { wordWrap: { width: 1150 }, lineSpacing: 6 }));
     const seguir = this.add.text(ANCHO - 60, ALTO - 38, '▶', estilo(22, '#6c5ce7')).setOrigin(1);
-    caja.add([quien, texto, seguir]);
+    caja.add([fondoRetrato, retrato, quien, texto, seguir]);
     this.tweens.add({ targets: seguir, alpha: 0.2, duration: 500, yoyo: true, repeat: -1 });
-    this.dialogo = { lineas, i: 0, fin, caja, quien, texto, desde: this.time.now };
+    this.dialogo = { lineas, i: 0, fin, caja, quien, texto, retrato, fondoRetrato, desde: this.time.now };
     this.mostrarLinea();
   }
 
   mostrarLinea() {
     const d = this.dialogo, l = d.lineas[d.i];
     const [q, t] = Array.isArray(l) ? l : ['', l];
-    d.quien.setText(q);
-    d.texto.setText(t).setY(q ? ALTO - 150 : ALTO - 165);
+    const img = RETRATOS[q];
+    d.retrato.setVisible(!!img);
+    d.fondoRetrato.setVisible(!!img);
+    if (img) d.retrato.setTexture(img).setScale(Math.min(1, 110 / d.retrato.width, 110 / d.retrato.height));
+    const x = img ? 210 : 55;
+    d.quien.setText(q).setX(x);
+    d.texto.setText(t).setX(x).setWordWrapWidth(ANCHO - x - 70).setY(q ? ALTO - 150 : ALTO - 165);
   }
 
   avanzar() {

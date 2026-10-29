@@ -2,7 +2,7 @@
 import { E, guardar } from './estado.js';
 import { PREGUNTAS } from './data.js';
 import * as R from './retos.js';
-import { ANCHO, ALTO, estilo, boton, panel, crearReto, abrirCodonario, VIOLETA, VERDE } from './ui.js';
+import { ANCHO, ALTO, estilo, boton, panel, fondo, crearReto, abrirCodonario, VIOLETA, VERDE } from './ui.js';
 
 const RIVALES = {
   practica: { nombre: 'Práctica con la polimerasa', img: 'polimerasa', vida: 3, fondo: 0xefe9fb, contador: 'Tramos que faltan' },
@@ -20,7 +20,10 @@ export class Batalla extends Phaser.Scene {
     this.vida = r.vida;
     this.escudo = 0;
     this.preguntas = R.mezclar(PREGUNTAS.map((_, i) => i));
-    this.cameras.main.setBackgroundColor(r.fondo).fadeIn(200);
+    this.cameras.main.fadeIn(200);
+    const tono = Phaser.Display.Color.ValueToColor(r.fondo);
+    fondo(this, tono.clone().lighten(5).color, tono.clone().darken(10).color);
+    this.add.ellipse(ANCHO / 2, 560, 1600, 300, 0xffffff, 0.35);
 
     this.add.ellipse(920, 330, 320, 60, 0x000000, 0.08);
     this.rival = this.add.image(920, 250, r.img).setScale(this.d.tipo === 'virus' ? 1.9 : 1.6);

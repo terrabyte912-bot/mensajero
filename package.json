@@ -1,1 +1,7 @@
-{"type":"module"}
+{
+  "type": "module",
+  "scripts": {
+    "build": "npx --yes esbuild@0.24.0 src/main.js --bundle --format=iife --outfile=juego.js",
+    "check": "node check.mjs"
+  }
+}

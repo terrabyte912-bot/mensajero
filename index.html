@@ -8,10 +8,11 @@
   <meta name="description" content="Un RPG sobre transcripción y traducción: sos un ARN mensajero.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icono.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="fuente.css">
   <style>
-    html, body { margin: 0; height: 100%; background: #efe9fb; overflow: hidden; touch-action: none; }
+    html, body { margin: 0; height: 100%; background: #1d1838; overflow: hidden; touch-action: none; }
     #juego { width: 100%; height: 100%; }
-    #girar { display: none; position: fixed; inset: 0; background: #6c5ce7; color: #fff; font: 600 24px system-ui, sans-serif;
+    #girar { display: none; position: fixed; inset: 0; background: #6c5ce7; color: #fff; font: 800 26px Nunito, system-ui, sans-serif;
       align-items: center; justify-content: center; text-align: center; padding: 24px; }
     @media (orientation: portrait) and (max-width: 900px) { #girar { display: flex; } }
   </style>
@@ -19,8 +20,9 @@
 <body>
   <div id="juego"></div>
   <div id="girar">Girá el celular para jugar ↻</div>
+  <!-- juego.js se arma desde src/ con: npm run build (ver README). Así funciona también con doble clic. -->
   <script src="src/phaser.min.js"></script>
-  <script type="module" src="src/main.js"></script>
+  <script src="juego.js"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
   </script>

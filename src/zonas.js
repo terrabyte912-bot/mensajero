@@ -7,22 +7,32 @@ import { estilo } from './ui.js';
 
 const nuevaPagina = () => { const p = darPagina(); return p ? [`¡Nueva página del Codonario! Ahora tenés los codones que empiezan con ${p}.`] : []; };
 
-function curvas(g, rnd, n, ancho, alto, color, grosor = 6) {
-  g.lineStyle(grosor, color, 1);
+// Decoración de fondo: manchas suaves, puntos y ribosomas libres.
+const manchas = (g, rnd, n, ancho, alto, color, alfa, rmin, rmax) => {
+  for (let i = 0; i < n; i++) g.fillStyle(color, alfa).fillCircle(rnd.between(0, ancho), rnd.between(0, alto), rnd.between(rmin, rmax));
+};
+const ribosomas = (g, rnd, n, ancho, alto) => {
   for (let i = 0; i < n; i++) {
-    let x = rnd.between(40, ancho - 40), y = rnd.between(40, alto - 40);
-    const pts = [new Phaser.Math.Vector2(x, y)];
-    for (let k = 0; k < 4; k++) { x += rnd.between(-90, 90); y += rnd.between(-90, 90); pts.push(new Phaser.Math.Vector2(x, y)); }
-    new Phaser.Curves.Spline(pts).draw(g, 40);
+    const x = rnd.between(30, ancho - 30), y = rnd.between(30, alto - 30);
+    g.fillStyle(0xbca59b, 1).fillCircle(x, y, 7).fillStyle(0xdccdc6, 1).fillCircle(x + 3, y + 8, 5);
+  }
+};
+function fibras(g, rnd, n, ancho, alto, color) {
+  g.lineStyle(4, color, 1);
+  for (let i = 0; i < n; i++) {
+    const y0 = rnd.between(0, alto);
+    new Phaser.Curves.CubicBezier(
+      new Phaser.Math.Vector2(0, y0), new Phaser.Math.Vector2(ancho / 3, y0 + rnd.between(-300, 300)),
+      new Phaser.Math.Vector2(2 * ancho / 3, y0 + rnd.between(-300, 300)), new Phaser.Math.Vector2(ancho, rnd.between(0, alto))).draw(g, 64);
   }
 }
-const puntitos = (g, rnd, n, ancho, alto, color) => {
-  g.fillStyle(color, 1);
-  for (let i = 0; i < n; i++) { const x = rnd.between(30, ancho - 30), y = rnd.between(30, alto - 30); g.fillCircle(x, y, 7).fillCircle(x + 5, y + 9, 5); }
-};
-const envoltura = (g, ancho, alto, color) =>
-  g.lineStyle(24, color, 1).strokeRoundedRect(12, 12, ancho - 24, alto - 24, 120)
-    .lineStyle(6, 0xffffff, 0.6).strokeRoundedRect(12, 12, ancho - 24, alto - 24, 120);
+// Envoltura nuclear: doble membrana con poros.
+function envoltura(g, ancho, alto, color, fondo) {
+  g.lineStyle(26, color, 1).strokeRoundedRect(13, 13, ancho - 26, alto - 26, 120)
+    .lineStyle(6, 0xffffff, 0.55).strokeRoundedRect(13, 13, ancho - 26, alto - 26, 120);
+  for (let x = 220; x < ancho - 200; x += 190) for (const y of [13, alto - 13]) g.fillStyle(fondo, 1).fillCircle(x, y, 13).lineStyle(4, 0x8f7ad6, 1).strokeCircle(x, y, 13);
+  for (let y = 220; y < alto - 200; y += 190) g.fillStyle(fondo, 1).fillCircle(13, y, 13).lineStyle(4, 0x8f7ad6, 1).strokeCircle(13, y, 13);
+}
 
 function helice(g, x0, x1, y) {
   const colores = Object.values(COLOR_BASE);
@@ -41,11 +51,14 @@ export const ZONAS = {
   nucleo: {
     nombre: 'Núcleo', ancho: 1800, alto: 1100, fondo: 0xefe9fb, inicio: [700, 680],
     decorar(m, g, rnd) {
-      curvas(g, rnd, 14, 1800, 1100, 0xe4dbf8, 5);
-      g.fillStyle(0xcfc0f0, 1).fillCircle(1450, 330, 150).fillStyle(0xbfaeea, 1).fillCircle(1420, 300, 70);
+      manchas(g, rnd, 22, 1800, 1100, 0xe5dcfa, 0.8, 70, 150);
+      manchas(g, rnd, 120, 1800, 1100, 0xd9ccf6, 1, 3, 6);
+      g.fillStyle(0x000000, 0.06).fillCircle(1458, 342, 150);
+      g.fillStyle(0xcfc0f0, 1).fillCircle(1450, 330, 150).fillStyle(0xbfaeea, 1).fillCircle(1420, 300, 70).fillStyle(0xdcd0f5, 1).fillCircle(1500, 380, 40);
+      g.fillStyle(0xffffff, 0.45).fillRoundedRect(140, 520, 860, 80, 40);
       helice(g, 160, 980, 560);
       m.add.text(570, 610, 'Gen IFNB1', estilo(20, '#6c5ce7', { fontStyle: 'bold' })).setOrigin(0.5);
-      envoltura(g, 1800, 1100, 0xb9a8e6);
+      envoltura(g, 1800, 1100, 0xb9a8e6, 0xefe9fb);
     },
     circulos: [[1450, 330, 150]],
     npcs: [
@@ -127,11 +140,17 @@ export const ZONAS = {
   poro: {
     nombre: 'Poro nuclear', ancho: 1300, alto: 900, fondo: 0xefe9fb, inicio: [120, 450],
     decorar(m, g, rnd) {
+      manchas(g, rnd, 8, 600, 900, 0xe5dcfa, 0.8, 60, 130);
+      manchas(g, rnd, 50, 600, 900, 0xd9ccf6, 1, 3, 6);
       g.fillStyle(0xe4f5ef, 1).fillRect(670, 0, 630, 900);
-      curvas(g, rnd, 8, 600, 900, 0xddd2f7);
-      for (const x of [645, 695]) g.fillStyle(0x9b87d8, 1).fillRect(x - 9, 0, 18, 380).fillRect(x - 9, 520, 18, 380);
-      m.add.text(330, 40, 'NÚCLEO', estilo(26, '#9b87d8', { fontStyle: 'bold' })).setOrigin(0.5);
-      m.add.text(990, 40, 'CITOPLASMA', estilo(26, '#5fb79d', { fontStyle: 'bold' })).setOrigin(0.5);
+      manchas(g, rnd, 6, 630, 900, 0xd3efe6, 0.4, 60, 120);
+      g.translateCanvas(670, 0);
+      ribosomas(g, rnd, 20, 630, 900);
+      g.translateCanvas(-670, 0);
+      g.fillStyle(0xd8cdf6, 1).fillRect(640, 0, 60, 900);
+      for (const x of [645, 695]) g.fillStyle(0x9b87d8, 1).fillRoundedRect(x - 9, 0, 18, 380, 9).fillRoundedRect(x - 9, 520, 18, 380, 9);
+      m.add.text(330, 790, 'NÚCLEO', estilo(26, '#9b87d8', { fontStyle: '800' })).setOrigin(0.5);
+      m.add.text(990, 790, 'CITOPLASMA', estilo(26, '#5fb79d', { fontStyle: '800' })).setOrigin(0.5);
     },
     paredes: () => [[630, 0, 80, 380], [630, 520, 80, 380], ...(E.flags.poro ? [] : [[630, 380, 80, 140]])],
     npcs: [
@@ -170,9 +189,11 @@ export const ZONAS = {
   citoplasma: {
     nombre: 'Citoplasma', ancho: 2400, alto: 1300, fondo: 0xe4f5ef, inicio: [120, 650],
     decorar(m, g, rnd) {
-      g.lineStyle(3, 0xd5ece5, 1);
-      for (let i = 0; i < 8; i++) g.lineBetween(rnd.between(0, 2400), 0, rnd.between(0, 2400), 1300);
-      puntitos(g, rnd, 60, 2400, 1300, 0xc8b6ae);
+      manchas(g, rnd, 30, 2400, 1300, 0xd3efe6, 0.7, 60, 150);
+      fibras(g, rnd, 6, 2400, 1300, 0xcbe8df);
+      ribosomas(g, rnd, 90, 2400, 1300);
+      for (let i = 0; i < 14; i++) g.lineStyle(4, 0xb8e0d4, 1).strokeCircle(rnd.between(50, 2350), rnd.between(50, 1250), rnd.between(12, 22));
+      for (const [, x, y] of this.obstaculos) g.fillStyle(0x000000, 0.07).fillEllipse(x, y + 46, 150, 26);
     },
     obstaculos: [['mitocondria', 500, 500], ['mitocondria', 900, 180], ['mitocondria', 1000, 780], ['mitocondria', 1480, 500], ['mitocondria', 1800, 1080], ['mitocondria', 1720, 200]],
     npcs: [
@@ -237,8 +258,11 @@ export const ZONAS = {
   reticulo: {
     nombre: 'Retículo endoplasmático rugoso', ancho: 1800, alto: 1000, fondo: 0xfdf0e4, inicio: [200, 180],
     decorar(m, g, rnd) {
+      manchas(g, rnd, 20, 1800, 1000, 0xfbe4d1, 0.8, 60, 140);
       for (const [x, y, w, h] of this.paredes) {
+        g.fillStyle(0x000000, 0.06).fillRoundedRect(x, y + 8, w, h, 34);
         g.fillStyle(0xf6c9a8, 1).fillRoundedRect(x, y, w, h, 34);
+        g.fillStyle(0xfbdcc4, 1).fillRoundedRect(x + 16, y + 16, w - 32, h - 32, 18);
         g.fillStyle(0xa1887f, 1);
         for (let px = x + 20; px < x + w - 10; px += 46) g.fillCircle(px, y - 4, 9).fillCircle(px + 18, y + h + 4, 9);
       }
@@ -271,6 +295,7 @@ export const ZONAS = {
   golgi: {
     nombre: 'Aparato de Golgi', ancho: 1600, alto: 900, fondo: 0xfff6dc, inicio: [120, 450],
     decorar(m, g, rnd) {
+      manchas(g, rnd, 16, 1600, 900, 0xfdebb8, 0.7, 60, 130);
       for (let i = 0; i < 5; i++) g.lineStyle(30, i % 2 ? 0xf7cf7a : 0xf2b84b, 1).beginPath().arc(900 + i * 34, 450, 230 - i * 10, Math.PI * 0.68, Math.PI * 1.32).strokePath();
       g.fillStyle(0xf7cf7a, 1);
       for (let i = 0; i < 14; i++) g.fillCircle(rnd.between(250, 1450), rnd.between(60, 840), rnd.between(10, 18));

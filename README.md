@@ -26,15 +26,19 @@ Las secuencias son reales: gen humano **IFNB1** (NCBI NM_002176.4). Para verific
 node check.mjs
 ```
 
-## Probarlo en la computadora
+## Jugar en la computadora
 
-Hace falta un servidor local, porque el juego usa módulos de JavaScript (abrir `index.html` con doble clic no alcanza):
+Doble clic en `index.html`. No hace falta internet ni servidor.
+
+## Cambiar el juego
+
+El código está en `src/`, pero la página carga `juego.js`, que es todo `src/` junto en un solo archivo (así funciona con doble clic). Después de cambiar algo en `src/`, desde esta carpeta:
 
 ```bash
-npx http-server . -p 8094 -c-1
+npm run build
 ```
 
-y abrir http://localhost:8094
+y recargá la página. Si te olvidás, el juego sigue mostrando la versión anterior.
 
 ## Publicarlo
 
@@ -48,3 +52,4 @@ Es una página estática: alcanza con subir la carpeta a **GitHub Pages** o **Ne
 - `src/arte.js`: dibujos de los personajes (SVG)
 - `src/mundo.js`, `src/batalla.js`, `src/traduccion.js`, `src/main.js`: escenas del juego
 - `src/phaser.min.js`: motor de juegos [Phaser 3.90](https://phaser.io)
+- `fuente.css`: fuente Nunito (licencia SIL Open Font), incluida para que funcione sin internet
