@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mensajero",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "http-server", ".", "-p", "8094", "-c-1"],
+      "port": 8094,
+      "autoPort": false
+    }
+  ]
+}

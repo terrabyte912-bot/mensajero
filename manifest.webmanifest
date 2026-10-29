@@ -1,0 +1,11 @@
+{
+  "name": "Mensajero: un RPG del ADN a la proteína",
+  "short_name": "Mensajero",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#efe9fb",
+  "theme_color": "#6c5ce7",
+  "lang": "es",
+  "icons": [{ "src": "icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
