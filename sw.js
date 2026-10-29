@@ -1,6 +1,6 @@
 // Guarda el juego en el dispositivo para que funcione sin internet.
 // Cambiá VERSION cada vez que publiques cambios, así los celulares bajan la versión nueva.
-const VERSION = 'mensajero-2';
+const VERSION = 'mensajero-3';
 const ARCHIVOS = [
   './', 'index.html', 'manifest.webmanifest', 'icono.svg',
   'fuente.css', 'src/phaser.min.js', 'juego.js',

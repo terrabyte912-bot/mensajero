@@ -1,6 +1,7 @@
 import { COLOR_BASE, aaTexto, traducir, NOMBRE } from './data.js';
 import { MUTACIONES } from './retos.js';
 import { E } from './estado.js';
+import { chispas, sonido } from './fx.js';
 
 export const ANCHO = 1280, ALTO = 720;
 export const TINTA = '#23233a';
@@ -25,13 +26,22 @@ export function boton(scene, x, y, w, h, etiqueta, alTocar, color = VIOLETA, tam
   const c = scene.add.container(x, y);
   const g = scene.add.graphics();
   const r = Math.min(16, h / 2);
-  g.fillStyle(Phaser.Display.Color.ValueToColor(color).darken(18).color, 1).fillRoundedRect(-w / 2, -h / 2 + 5, w, h, r);
-  g.fillStyle(color, 1).fillRoundedRect(-w / 2, -h / 2, w, h, r);
-  g.fillStyle(0xffffff, 0.16).fillRoundedRect(-w / 2 + 4, -h / 2 + 3, w - 8, h * 0.42, { tl: r - 3, tr: r - 3, bl: 6, br: 6 });
+  c.pintar = col => g.clear()
+    .fillStyle(Phaser.Display.Color.ValueToColor(col).darken(18).color, 1).fillRoundedRect(-w / 2, -h / 2 + 5, w, h, r)
+    .fillStyle(col, 1).fillRoundedRect(-w / 2, -h / 2, w, h, r)
+    .fillStyle(0xffffff, 0.16).fillRoundedRect(-w / 2 + 4, -h / 2 + 3, w - 8, h * 0.42, { tl: r - 3, tr: r - 3, bl: 6, br: 6 });
+  c.pintar(color);
   const t = scene.add.text(0, 0, etiqueta, estilo(tam, '#fff', { fontStyle: '800', align: 'center', wordWrap: { width: w - 20 } })).setOrigin(0.5);
   c.add([g, t]).setSize(w, h).setInteractive({ useHandCursor: true });
-  c.on('pointerdown', (...a) => { cortar(...a); alTocar(); });
-  c.on('pointerover', () => c.setAlpha(0.85)).on('pointerout', () => c.setAlpha(1));
+  // Al tocar se hunde un poco; al pasar el mouse crece apenas.
+  c.on('pointerdown', (...a) => {
+    cortar(...a);
+    sonido('clic');
+    scene.tweens.add({ targets: c, scaleX: 0.93, scaleY: 0.9, duration: 70, yoyo: true, ease: 'Sine.out' });
+    alTocar();
+  });
+  c.on('pointerover', () => scene.tweens.add({ targets: c, scale: 1.04, duration: 120 }))
+    .on('pointerout', () => scene.tweens.add({ targets: c, scale: 1, duration: 120 }));
   c.texto = t;
   return c;
 }
@@ -108,6 +118,14 @@ export function crearReto(scene, r, alTerminar, { titulo } = {}) {
     ok ? E.aciertos++ : E.errores++;
     botones.forEach(b => b.disableInteractive());
     aviso.setColor(ok ? '#1e8449' : '#c0392b').setText(`${ok ? '¡Bien!' : mal} ${explicacion}`).setY(512);
+    if (ok) {
+      sonido('bien');
+      chispas(scene, cx, 130, [0x6c5ce7, 0x3dbe6b, 0xf2c94c, 0x2f80ed, 0xeb5757], 40, { textura: 'estrella', fija: true, velocidad: 420, escala: 0.8 });
+    } else {
+      sonido('mal');
+      scene.tweens.add({ targets: cont, x: { from: -12, to: 12 }, duration: 55, yoyo: true, repeat: 3, onComplete: () => cont.setX(0) });
+    }
+    scene.tweens.add({ targets: aviso, scale: { from: 0.85, to: 1 }, duration: 260, ease: 'Back.out' });
     cont.add(boton(scene, cx, 640, 260, 60, 'Continuar', () => { cont.destroy(); alTerminar(ok); }, ok ? VERDE : VIOLETA));
     fijar(cont);
   };
@@ -125,8 +143,11 @@ export function crearReto(scene, r, alTerminar, { titulo } = {}) {
     });
   };
   const marcarBotones = (correcta, elegido, etiqueta) => botones.forEach(b => {
-    if (b.texto.text === etiqueta(correcta)) b.list[0].clear().fillStyle(VERDE).fillRoundedRect(-b.width / 2, -b.height / 2, b.width, b.height, 14);
-    else if (b === elegido) b.list[0].clear().fillStyle(ROJO).fillRoundedRect(-b.width / 2, -b.height / 2, b.width, b.height, 14);
+    if (b.texto.text === etiqueta(correcta)) {
+      b.pintar(VERDE);
+      scene.tweens.add({ targets: b, scale: 1.07, duration: 160, yoyo: true, repeat: 1 });
+    } else if (b === elegido) b.pintar(ROJO);
+    else b.setAlpha(0.55);
   });
 
   if (r.tipo === 'transcribir') {
@@ -143,13 +164,17 @@ export function crearReto(scene, r, alTerminar, { titulo } = {}) {
       if (listo) return;
       const ok = r.respuesta[i];
       if (b === ok) {
-        huecos[i].pintar(b); i++;
+        huecos[i].pintar(b);
+        scene.tweens.add({ targets: huecos[i], scale: { from: 1.45, to: 1 }, duration: 260, ease: 'Back.out' });
+        chispas(scene, huecos[i].x, 320, [COLOR_BASE[b], 0xffffff], 10, { fija: true, velocidad: 180, escala: 0.4, gravedad: 0 });
+        i++;
         if (i < huecos.length) cursor.x = huecos[i].x; else cursor.destroy();
         aviso.setText('');
         if (i === huecos.length) terminar(errores === 0, errores ? `Lo completaste con ${errores} error${errores > 1 ? 'es' : ''}. Reglas: A→U, T→A, C→G, G→C.` : 'Sin errores.', 'Casi.');
       } else {
         errores++;
         aviso.setColor('#c0392b').setText(b === 'T' ? 'En el ARN no hay T: en su lugar va U (uracilo).' : `Frente a ${r.molde[i]} en el ADN va ${ok} en el ARN.`);
+        sonido('mal');
         scene.cameras.main.shake(120, 0.004);
       }
     };
@@ -243,5 +268,8 @@ export function crearReto(scene, r, alTerminar, { titulo } = {}) {
     });
   }
   fijar(cont);
+  sonido('abrir');
+  cont.setAlpha(0).setY(26);
+  scene.tweens.add({ targets: cont, alpha: 1, y: 0, duration: 260, ease: 'Back.out' });
   return cont;
 }

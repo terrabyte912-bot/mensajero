@@ -49,7 +49,8 @@ Es una página estática: alcanza con subir la carpeta a **GitHub Pages** o **Ne
 - `src/data.js`: secuencia del gen, código genético y preguntas
 - `src/retos.js`: generadores de desafíos
 - `src/zonas.js`: mapas, personajes y diálogos
-- `src/arte.js`: dibujos de los personajes (SVG)
+- `src/arte.js`: dibujos de los personajes (SVG), con versión de ojos cerrados para parpadear
+- `src/fx.js`: partículas, números que flotan y sonidos (generados en el momento, sin archivos de audio)
 - `src/mundo.js`, `src/batalla.js`, `src/traduccion.js`, `src/main.js`: escenas del juego
 - `src/phaser.min.js`: motor de juegos [Phaser 3.90](https://phaser.io)
 - `fuente.css`: fuente Nunito (licencia SIL Open Font), incluida para que funcione sin internet
